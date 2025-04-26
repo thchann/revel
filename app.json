@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "revel-frontend",
+    "slug": "revel-frontend",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "config": {
+        "googleMapsApiKey": "AIzaSyD3e2W6m_riKkBwGNJ-a3cpuQXdKMXXejM"
+      },
+      "supportsTablet": true,
+      "bundleIdentifier": "com.johnstoklas.revelfrontend",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyD3e2W6m_riKkBwGNJ-a3cpuQXdKMXXejM"
+        }
+      },
+
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "revel-frontend",
+    "extra": {
+      "auth0Domain": "dev-sb38zfhoymytmq0h.us.auth0.com",
+      "auth0ClientId": "96pqwlsRu8F918sq6xUC53IQ3lRtvAP",
+      "eas": {
+        "projectId": "4f5bca70-d3f9-41a3-8f03-ded0a24b2f8d"
+      }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
+  }
+}
