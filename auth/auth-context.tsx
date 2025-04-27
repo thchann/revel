@@ -29,7 +29,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-
+  const [authFlowStarted, setAuthFlowStarted] = useState(false);
   const redirectUri = makeRedirectUri({ native: 'exp://fbfpraq-tchan-8081.exp.direct' });
 
   const [loginRequest, loginResponse, promptLogin] = useAuthRequest(
@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       redirectUri,
       responseType: ResponseType.Token,
       scopes: ['openid', 'profile', 'email'],
-      extraParams: { prompt: 'select_account' },
+      extraParams: { prompt: 'login' }, // <-- force fresh login
     },
     discovery
   );
@@ -56,20 +56,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithAuth0 = () => {
     console.log('[Auth] Triggering login');
-    if (loginRequest) promptLogin();
+    setAuthFlowStarted(true);
+    promptLogin();
   };
 
   const signupWithAuth0 = () => {
     console.log('[Auth] Triggering signup');
-    if (signupRequest) promptSignup();
+    setAuthFlowStarted(true);
+    promptSignup();
   };
 
   const logoutWithAuth0 = async () => {
     console.log('[Auth] Logging out');
+    
     await SecureStore.deleteItemAsync('authToken');
     await SecureStore.deleteItemAsync('activeUserId');
     setToken(null);
-    // Optional: Also clear User and Onboarding state if needed
+  
+    const logoutUrl = `https://${AUTH0_DOMAIN}/v2/logout?client_id=${AUTH0_CLIENT_ID}&returnTo=${encodeURIComponent(redirectUri)}`;
+  
+    // 🛠️ Use openBrowserAsync, NOT openAuthSessionAsync
   };
 
   const getUserInfo = async (accessToken: string) => {
@@ -107,6 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleAuthResponse = async () => {
       const res = loginResponse || signupResponse;
       if (!res) return;
+      setAuthFlowStarted(false);
 
       if (res.type === 'success' && res.params?.access_token) {
         const accessToken = res.params.access_token;

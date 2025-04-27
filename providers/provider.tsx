@@ -10,9 +10,7 @@ export default function Providers({ children }: Props) {
   return (
     <AuthProvider>
       <UserProvider>
-        <OnboardingProvider>
-          {children}
-        </OnboardingProvider>
+        {children}
       </UserProvider>
      </AuthProvider>
   );
