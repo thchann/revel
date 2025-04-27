@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       redirectUri,
       responseType: ResponseType.Token,
       scopes: ['openid', 'profile', 'email'],
-      extraParams: { prompt: 'login' }, // <-- force fresh login
+      extraParams: { prompt: 'login' },
     },
     discovery
   );
@@ -86,6 +86,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return await res.json();
   };
 
+  // 🔥 Save user to your backend
+  const saveUserToBackend = async (userProfile: any) => {
+    try {
+      await fetch('https://your-backend.com/api/users', { // <--- CHANGE to your real backend URL
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          auth0Id: userProfile.sub,
+          email: userProfile.email,
+          username: userProfile.nickname, // or any other field you want
+        }),
+      });
+      console.log('[Auth] User saved to backend.');
+    } catch (error) {
+      console.error('[Auth] Failed to save user to backend:', error);
+    }
+  };
+
   useEffect(() => {
     const loadToken = async () => {
       console.log('[Auth] Checking for stored token...');
@@ -124,6 +142,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const profile = await getUserInfo(accessToken);
           const userId = profile.sub;
           await SecureStore.setItemAsync('activeUserId', userId);
+
+          // 🔥 Save the user into your backend
+          await saveUserToBackend(profile);
 
           const safeUserId = userId.replace(/[^\w.-]/g, '_');
 
