@@ -1,12 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
-import {
-  useAuthRequest,
-  makeRedirectUri,
-  ResponseType,
-} from 'expo-auth-session';
+import { useAuthRequest, makeRedirectUri, ResponseType } from 'expo-auth-session';
 import { AUTH0_DOMAIN, AUTH0_CLIENT_ID } from '@env';
+import { getUserInfo, saveUserToBackend } from '../services/user-service';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -30,7 +27,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authFlowStarted, setAuthFlowStarted] = useState(false);
+
   const redirectUri = makeRedirectUri({ native: 'exp://fbfpraq-tchan-8081.exp.direct' });
+  const logoutReturnUri = 'yourapp://login';
 
   const [loginRequest, loginResponse, promptLogin] = useAuthRequest(
     {
@@ -55,75 +54,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   const loginWithAuth0 = () => {
-    console.log('[Auth] Triggering login');
     setAuthFlowStarted(true);
     promptLogin();
   };
 
   const signupWithAuth0 = () => {
-    console.log('[Auth] Triggering signup');
     setAuthFlowStarted(true);
     promptSignup();
   };
 
   const logoutWithAuth0 = async () => {
     console.log('[Auth] Logging out');
-    
     await SecureStore.deleteItemAsync('authToken');
     await SecureStore.deleteItemAsync('activeUserId');
     setToken(null);
-  
-    const logoutUrl = `https://${AUTH0_DOMAIN}/v2/logout?client_id=${AUTH0_CLIENT_ID}&returnTo=${encodeURIComponent(redirectUri)}`;
-  
-    // 🛠️ Use openBrowserAsync, NOT openAuthSessionAsync
+    console.log('[Auth] Token cleared');
   };
 
-  const getUserInfo = async (accessToken: string) => {
-    const res = await fetch(`https://${AUTH0_DOMAIN}/userinfo`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (!res.ok) throw new Error('[Auth] Failed to fetch profile');
-    return await res.json();
-  };
-
-  // 🔥 Save user to your backend
-  const saveUserToBackend = async (userProfile: any) => {
-    try {
-      await fetch('https://your-backend.com/api/users', { // <--- CHANGE to your real backend URL
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          auth0Id: userProfile.sub,
-          email: userProfile.email,
-          username: userProfile.nickname, // or any other field you want
-        }),
-      });
-      console.log('[Auth] User saved to backend.');
-    } catch (error) {
-      console.error('[Auth] Failed to save user to backend:', error);
+  const loadToken = async () => {
+    console.log('[Auth] Checking for stored token...');
+    const stored = await SecureStore.getItemAsync('authToken');
+    if (stored) {
+      setToken(stored);
+      console.log('[Auth] Token restored:', stored);
+    } else {
+      console.log('[Auth] No token found.');
     }
+    setAuthLoading(false);
   };
 
   useEffect(() => {
-    const loadToken = async () => {
-      console.log('[Auth] Checking for stored token...');
-      const stored = await SecureStore.getItemAsync('authToken');
-      if (stored) {
-        try {
-          const profile = await getUserInfo(stored);
-          const userId = profile.sub;
-          await SecureStore.setItemAsync('activeUserId', userId);
-          setToken(stored);
-          console.log('[Auth] Returning user session loaded for', userId);
-        } catch {
-          await SecureStore.deleteItemAsync('authToken');
-          await SecureStore.deleteItemAsync('activeUserId');
-        }
-      } else {
-        console.log('[Auth] No token found');
-      }
-      setAuthLoading(false);
-    };
     loadToken();
   }, []);
 
@@ -131,37 +91,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleAuthResponse = async () => {
       const res = loginResponse || signupResponse;
       if (!res) return;
+
       setAuthFlowStarted(false);
 
       if (res.type === 'success' && res.params?.access_token) {
         const accessToken = res.params.access_token;
         await SecureStore.setItemAsync('authToken', accessToken);
         setToken(accessToken);
+        console.log('[Auth] Access token received:', accessToken);
 
         try {
           const profile = await getUserInfo(accessToken);
-          const userId = profile.sub;
-          await SecureStore.setItemAsync('activeUserId', userId);
+          console.log('[Auth] Got user info from Auth0:', profile);
 
-          // 🔥 Save the user into your backend
+          // Save the user to your backend
           await saveUserToBackend(profile);
 
-          const safeUserId = userId.replace(/[^\w.-]/g, '_');
+          // 🆕 Save user locally for UserContext
+          await SecureStore.setItemAsync(`userProfile-${profile.sub}`, JSON.stringify({
+            username: profile.nickname,
+            fullName: profile.name,
+          }));
 
-          if (signupResponse && res === signupResponse) {
-            await SecureStore.setItemAsync(`onboardingComplete-${safeUserId}`, 'false');
-            console.log('[Auth] New user detected. Reset onboarding.');
-          }
+          // 🆕 Save active user ID (needed for later)
+          await SecureStore.setItemAsync('activeUserId', profile.sub);
 
-          const historyRaw = await SecureStore.getItemAsync('sessionHistory');
-          const history = historyRaw ? JSON.parse(historyRaw) : [];
-          const updated = [
-            { sub: userId, email: profile.email, timestamp: Date.now() },
-            ...history.filter((u: any) => u.sub !== userId),
-          ];
-          await SecureStore.setItemAsync('sessionHistory', JSON.stringify(updated));
-        } catch (e) {
-          console.warn('[Auth] Auth success handling failed:', e);
+          console.log('[Auth] User profile saved locally');
+
+        } catch (error) {
+
         }
       } else if (res.type === 'dismiss') {
         console.log('[Auth] Auth popup dismissed');
@@ -169,9 +127,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await SecureStore.deleteItemAsync('activeUserId');
         setToken(null);
       }
-
       setAuthLoading(false);
     };
+
     handleAuthResponse();
   }, [loginResponse, signupResponse]);
 

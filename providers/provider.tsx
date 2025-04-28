@@ -1,6 +1,6 @@
 import React from 'react';
 import { AuthProvider } from '../auth/auth-context';
-import { UserProvider } from '../context/UserContext';
+import { UserProvider } from '../context/user-context';
 
 type Props = {
   children: React.ReactNode;

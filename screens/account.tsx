@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,23 +10,46 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../context/user-context';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../auth/auth-context';
-import { friendsData } from '../data/friendsData';
 import FriendsModal from '../components/modals/friendsModal';
 import PartiesModal from '../components/modals/partiesModal';
 import ClubsModal from '../components/modals/clubsModal';
-
+import { fetchUserById } from '../services/user-service';
+import * as SecureStore from 'expo-secure-store';
 
 export default function AccountPage() {
-  const { username, fullName, setFullName } = useUser();
+  const { username, fullName, setFullName, setUsername } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(fullName);
   const { logoutWithAuth0 } = useAuth();
   const [activeTab, setActiveTab] = useState<'friends' | 'parties' | 'clubs'>('friends');
-  const [friends, setFriends] = useState(friendsData);
-  
+  const [friends, setFriends] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        const userId = await SecureStore.getItemAsync('activeUserId');
+        if (!userId) {
+          console.error('[AccountPage] No active user id found');
+          return;
+        }
+
+        const userData = await fetchUserById(userId);
+
+        setFullName(userData.name);
+        setTempName(userData.name);
+        setUsername(userData.name);
+        setFriends(userData.friends || []);
+
+      } catch (error) {
+        console.error('[AccountPage] Failed to load user profile:', error);
+      }
+    };
+
+    loadUserProfile();
+  }, []);
 
   const handleEdit = () => {
     if (isEditing) setFullName(tempName);
@@ -59,7 +82,7 @@ export default function AccountPage() {
               autoFocus
             />
           ) : (
-            <Text style={styles.name}>{fullName}</Text>
+            <Text style={styles.name}>{tempName}</Text>
           )}
           <TouchableOpacity onPress={handleEdit}>
             <Feather name="edit-3" size={16} color="#444" style={{ marginLeft: 6 }} />
@@ -72,7 +95,7 @@ export default function AccountPage() {
             onPress={() => setActiveTab('friends')}
           >
             <Text style={[styles.tabText, activeTab === 'friends' && styles.activeTabText]}>
-              Friends <Text style={{ fontWeight: '700' }}>124</Text>
+              Friends <Text style={{ fontWeight: '700' }}>{friends.length}</Text>
             </Text>
           </TouchableOpacity>
 
@@ -81,7 +104,7 @@ export default function AccountPage() {
             onPress={() => setActiveTab('parties')}
           >
             <Text style={[styles.tabText, activeTab === 'parties' && styles.activeTabText]}>
-              Parties <Text style={{ fontWeight: '700' }}>12</Text>
+              Parties
             </Text>
           </TouchableOpacity>
 
@@ -90,7 +113,7 @@ export default function AccountPage() {
             onPress={() => setActiveTab('clubs')}
           >
             <Text style={[styles.tabText, activeTab === 'clubs' && styles.activeTabText]}>
-              Clubs <Text style={{ fontWeight: '700' }}>2</Text>
+              Clubs
             </Text>
           </TouchableOpacity>
         </View>
@@ -109,21 +132,20 @@ export default function AccountPage() {
                     id={item.id}
                     name={item.name}
                     username={item.username}
-                    avatar={item.avatar}
+                    avatar={require('../assets/profile.jpg')}
                     onRemove={(id) => setFriends((prev) => prev.filter((f) => f.id !== id))}
                   />
                 )}
               />
             </View>
           )}
-        {activeTab === 'parties' && <PartiesModal />}
-        {activeTab === 'clubs' && <ClubsModal />}
+          {activeTab === 'parties' && <PartiesModal />}
+          {activeTab === 'clubs' && <ClubsModal />}
         </View>
       </View>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
