@@ -56,7 +56,7 @@ export const fetchUserByEmail = async (email: string) => {
 
 // Fetch a user by **ID** (normal use)
 export const fetchUserById = async (userId: string) => {
-  const response = await fetch(`${BACKEND_URL}/${userId}`);
+  const response = await fetch(`${BACKEND_URL}/users/${userId}`);
   if (!response.ok) throw new Error('Failed to fetch user by ID');
   return await response.json();
 };

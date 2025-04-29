@@ -20,6 +20,8 @@ import { PostStackParamList } from './postNav';
 import { Ionicons } from '@expo/vector-icons';
 import { Modalize } from 'react-native-modalize';
 import AddLocationScreen from './addLocation';
+import { createEvent } from '../../services/party-service';
+import * as SecureStore from 'expo-secure-store';
 
 
 type FormScreenRouteProp = RouteProp<PostStackParamList, 'PostForm'>;
@@ -71,9 +73,34 @@ export default function PostFormScreen() {
     }
   };
 
-  const onPost = () => {
-    console.log({ title, description, location, date, imageUri });
-    Alert.alert('Post Created', 'Party info has been logged to the console!');
+  const onPost = async () => {
+    try {
+      const userId = await SecureStore.getItemAsync('activeUserId');
+      if (!userId) {
+        Alert.alert("Error", "User not logged in");
+        return;
+      }
+  
+      const eventData = {
+        title,
+        date: date.toISOString(),
+        location,
+        images: imageUri,
+        organization: selectedAffiliation !== 'Personal' ? selectedAffiliation : undefined,
+        description,
+        host: userId,
+        attendees: [userId], // host is an attendee
+      };
+  
+      const created = await createEvent(eventData);
+      console.log('[onPost] Event successfully created:', created);
+  
+      Alert.alert("Success", "Your party was posted!");
+      navigation.goBack(); // or go to a confirmation screen
+    } catch (err) {
+      console.error("[onPost] Error creating event:", err);
+      Alert.alert("Error", "Failed to post your party.");
+    }
   };
 
   useLayoutEffect(() => {

@@ -18,7 +18,9 @@ import PartiesModal from '../components/modals/partiesModal';
 import ClubsModal from '../components/modals/clubsModal';
 import { fetchUserByEmail } from '../services/user-service'; // changed from fetchUserById
 import * as SecureStore from 'expo-secure-store';
-import { updateFriends } from '../services/friend-service';
+import { removeFriendFromBackend } from '../services/friend-service';
+import * as ImagePicker from 'expo-image-picker';
+import { fetchUserById } from '../services/user-service';
 
 export default function AccountPage() {
   const { username, fullName, setFullName, setUsername } = useUser();
@@ -45,13 +47,30 @@ export default function AccountPage() {
 
         const userData = await fetchUserByEmail(userEmail);
         setUserId(userData.id);
-        console.log('[AccountPage] Fetched userData from backend:', userData);
-
         setFullName(userData.name);
         setTempName(userData.name);
         setUsername(userData.email.split('@')[0]);
         setProfileImageUrl(userData.image || null);
         setFriends(userData.friends || []);
+
+        const friendDetails = await Promise.all(
+          (userData.friends || []).map(async (friendId: string) => {
+            try {
+              const friend = await fetchUserById(friendId);
+              return {
+                id: friend.id,
+                name: friend.name,
+                username: friend.email.split('@')[0], // assuming no username field
+                avatar: friend.image || null,
+              };
+            } catch (err) {
+              console.warn(`Could not fetch friend with id ${friendId}`);
+              return null;
+            }
+          })
+        );
+
+        setFriends(friendDetails.filter(f => f));
 
       } catch (error) {
         console.error('[AccountPage] Failed to load user profile:', error);
@@ -74,17 +93,38 @@ export default function AccountPage() {
         return;
       }
   
-      // Filter out the friend locally
-      const updatedFriends = friends.filter((f: any) => f.id !== friendIdToRemove);
-      setFriends(updatedFriends); // Update UI
+      // 🔁 Call backend DELETE route to remove one friend
+      await removeFriendFromBackend(userId, friendIdToRemove);
   
-      // Send only the friend IDs to backend
-      const friendIdsToSend = updatedFriends.map((f: any) => f.id);
-      await updateFriends(userId, friendIdsToSend);
+      // ✅ Update local UI
+      const updatedFriends = friends.filter((f: string) => f !== friendIdToRemove);
+      setFriends(updatedFriends);
   
-      console.log('✅ Friend removed locally and in backend');
+      console.log('✅ Friend removed both from backend and UI');
     } catch (error) {
-      console.error('❌ Failed to remove friend:', error);
+      console.error('❌ Error removing friend:', error);
+    }
+  };
+
+  const handlePickProfileImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1], // square crop
+        quality: 1,
+      });
+  
+      if (!result.canceled && result.assets.length > 0) {
+        const selectedUri = result.assets[0].uri;
+        setProfileImageUrl(selectedUri); // update local profile picture
+        console.log('✅ New profile image selected:', selectedUri);
+        
+        // Optional future idea:
+        // Upload selectedUri to your backend so it persists even after logout
+      }
+    } catch (error) {
+      console.error('❌ Error picking profile image:', error);
     }
   };
 
@@ -103,11 +143,13 @@ export default function AccountPage() {
           </TouchableOpacity>
         </View>
 
-        {profileImageUrl ? (
-          <Image source={{ uri: profileImageUrl }} style={styles.profileImage} />
-        ) : (
-          <Image source={require('../assets/profile.jpg')} style={styles.profileImage} />
-        )}
+        <TouchableOpacity onPress={handlePickProfileImage}>
+          {profileImageUrl ? (
+            <Image source={{ uri: profileImageUrl }} style={styles.profileImage} />
+          ) : (
+            <Image source={require('../assets/profile.jpg')} style={styles.profileImage} />
+          )}
+        </TouchableOpacity>
 
         <View style={styles.nameRow}>
           {isEditing ? (
@@ -152,13 +194,13 @@ export default function AccountPage() {
               <Text style={styles.friendTitle}>Friends ({friends.length})</Text>
               <FlatList
                 data={friends}
-                keyExtractor={(item) => typeof item === 'string' ? item : item.id}
+                keyExtractor={(item) => item.id?.toString() ?? Math.random().toString()}
                 renderItem={({ item }) => (
                   <FriendsModal
-                    id={typeof item === 'string' ? item : item.id}
-                    name={typeof item === 'string' ? '' : item.name}
-                    username={typeof item === 'string' ? '' : item.username}
-                    avatar={require('../assets/profile.jpg')}
+                    id={item.id}
+                    name={item.name}
+                    username={item.username}
+                    avatar={item.avatar ? { uri: item.avatar } : require('../assets/profile.jpg')}
                     onRemove={handleRemoveFriend}
                   />
                 )}
@@ -180,7 +222,8 @@ const styles = StyleSheet.create({
   manage: { fontSize: 14, color: '#666' },
   logout: { fontSize: 14, color: '#2E2A80', fontWeight: '600' },
   logoutButton: { flexDirection: 'row', alignItems: 'center', padding: 4, marginTop: 4 },
-  profileImage: { width: 130, height: 130, borderRadius: 65, marginBottom: 12 },
+  profileImage: { width: 130, height: 130, borderRadius: 65, marginBottom: 12, borderWidth: 1,              // ⬅ adds a thin border
+  borderColor: 'rgba(0,0,0,0.2)', },
   nameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
   name: { fontSize: 18, fontWeight: '600' },
   nameInput: { fontSize: 18, borderBottomWidth: 1, borderBottomColor: '#ccc', paddingVertical: 4, minWidth: 160 },
@@ -189,6 +232,6 @@ const styles = StyleSheet.create({
   tabText: { fontSize: 14, color: '#444' },
   activeTab: { backgroundColor: '#2E2A80' },
   activeTabText: { color: '#fff' },
-  friendContainer: { backgroundColor: '#f2f2f2', borderRadius: 12, padding: 16, width: '100%', maxHeight: 380 },
+  friendContainer: { backgroundColor: '#fff', borderRadius: 12, padding: 16, width: '100%', maxHeight: 380, borderWidth:1, borderColor: 'rgba(117, 115, 115, 0.18)' },
   friendTitle: { fontWeight: '700', fontSize: 16, marginBottom: 12 },
 });
