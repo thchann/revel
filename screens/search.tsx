@@ -2,18 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, Keyboard } from 'react-native';
 import { Event, Friend } from '../types/components'; 
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import SearchItems from '../app/search_components/SearchItems';
 import SearchBar from '../app/search_components/SearchBar';
-
-import { fetchAllEvents, fetchAllUsers } from '../services/search-service'; // <- NEW IMPORT
+import { fetchAllEvents, fetchAllUsers } from '../services/search-service';
 import fuzzysort from 'fuzzysort';
+import * as SecureStore from 'expo-secure-store';
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('Parties'); // 'Parties' or 'Friends'
   const [filteredResults, setFilteredResults] = useState<any[]>([]);
-
   const [events, setEvents] = useState<Event[]>([]);
   const [users, setUsers] = useState<Friend[]>([]);
   const [isSearchActive, setIsSearchActive] = useState(false);
@@ -23,13 +21,26 @@ export default function SearchPage() {
       try {
         const fetchedEvents = await fetchAllEvents();
         const fetchedUsers = await fetchAllUsers();
+  
+        const activeUserId = await SecureStore.getItemAsync('activeUserId');
+
+        const activeUser = fetchedUsers.find((user: Friend) => user.id === activeUserId);
+        const activeUserFriends = activeUser?.friends || [];
+
+        const filteredUsers = fetchedUsers
+          .filter((user: Friend) => user.id !== activeUserId)
+          .map((user: Friend) => ({
+            ...user,
+            isFriend: activeUserFriends.includes(user.id),
+          }));
+  
         setEvents(fetchedEvents);
-        setUsers(fetchedUsers);
+        setUsers(filteredUsers);
       } catch (error) {
         console.error('[SearchPage] Failed to fetch initial data:', error);
       }
     };
-
+  
     loadInitialData();
   }, []);
 
@@ -50,7 +61,7 @@ export default function SearchPage() {
     } else {
       setFilteredResults([]);
     }
-  }, [searchQuery, activeFilter]);
+  }, [searchQuery, activeFilter, users]); // <-- ADD users HERE so when updated, filteredResults are refreshed!
 
   const searchInEvents = (query: string): Event[] => {
     if (query.trim().length === 0) return [];
@@ -70,6 +81,15 @@ export default function SearchPage() {
     Keyboard.dismiss();
   };
 
+  // --- ADD THIS: function to update one user (make them a friend live)
+  const markUserAsFriend = (userId: string) => {
+    setUsers(prevUsers =>
+      prevUsers.map(user =>
+        user.id === userId ? { ...user, isFriend: true } : user
+      )
+    );
+  };
+
   return (
     <SafeAreaView style={styles.page} edges={['top']}>
       <SearchBar
@@ -87,6 +107,7 @@ export default function SearchPage() {
         <SearchItems 
           filteredItems={filteredResults}
           activeFilter={activeFilter}
+          markUserAsFriend={markUserAsFriend} // <-- PASS IT
         />
       )}
 
