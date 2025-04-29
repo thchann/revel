@@ -1,5 +1,5 @@
 const AUTH0_DOMAIN = 'dev-sb38zfhoymytmq0h.us.auth0.com';
-const BACKEND_URL = 'https://782d-131-194-168-66.ngrok-free.app'; // add /users because your router is /users
+const BACKEND_URL = 'https://ac13-131-194-168-66.ngrok-free.app'; // add /users because your router is /users
 
 // Fetch user profile from Auth0's /userinfo endpoint
 export const getUserInfo = async (accessToken: string) => {
@@ -56,7 +56,7 @@ export const fetchUserByEmail = async (email: string) => {
 
 // Fetch a user by **ID** (normal use)
 export const fetchUserById = async (userId: string) => {
-  const response = await fetch(`${BACKEND_URL}/${userId}`);
+  const response = await fetch(`${BACKEND_URL}/users/${userId}`);
   if (!response.ok) throw new Error('Failed to fetch user by ID');
   return await response.json();
 };

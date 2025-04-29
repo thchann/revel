@@ -1,4 +1,27 @@
-const BACKEND_URL = 'https://782d-131-194-168-66.ngrok-free.app'; // Update to your real ngrok!
+const BACKEND_URL = 'https://ac13-131-194-168-66.ngrok-free.app'; // Update to your real ngrok!
+
+export const createEvent = async (eventData: {
+    title: string;
+    date: string; // ISO string
+    location: string;
+    images: string;
+    organization?: string;
+    description?: string;
+    host: string;
+    attendees?: string[];
+  }) => {
+    const response = await fetch(`${BACKEND_URL}/events/create_event`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(eventData),
+    });
+  
+    if (!response.ok) {
+      throw new Error('Failed to create event');
+    }
+  
+    return await response.json(); // contains the event ID and data
+  };
 
 export const fetchAllEvents = async () => {
   const response = await fetch(`${BACKEND_URL}/events/all_events`);
@@ -21,3 +44,15 @@ export const fetchAllEvents = async () => {
     
   }));
 };
+
+export const fetchUserEvents = async (userId: string) => {
+    const response = await fetch(`${BACKEND_URL}/users/${userId}/events`);
+    if (!response.ok) throw new Error('Failed to fetch user events');
+    return await response.json(); // list of event IDs
+  };
+  
+export const fetchEventById = async (eventId: string) => {
+    const response = await fetch(`${BACKEND_URL}/events/${eventId}`);
+    if (!response.ok) throw new Error('Failed to fetch event details');
+    return await response.json(); // full event object
+  };

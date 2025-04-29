@@ -11,11 +11,13 @@ interface FriendModalProps {
 
 export default function FriendsModal({ id, name, username, avatar, onRemove }: FriendModalProps) {
   return (
-    <View style={styles.friendRow}>
-      <Image source={avatar} style={styles.avatar} />
-      <View style={{ flex: 1 }}>
-        <Text style={styles.friendName}>{name}</Text>
-        <Text style={styles.friendUsername}>{username}</Text>
+    <View style={styles.friendContainer}>
+      <View style={styles.friendInfo}>
+        <Image source={avatar} style={styles.avatar} />
+        <View>
+          <Text style={styles.friendName}>{name}</Text>
+          <Text style={styles.friendUsername}>@{username}</Text>
+        </View>
       </View>
       <TouchableOpacity onPress={() => onRemove(id)} style={styles.removeButton}>
         <Text style={styles.removeText}>Remove</Text>
@@ -25,37 +27,45 @@ export default function FriendsModal({ id, name, username, avatar, onRemove }: F
 }
 
 const styles = StyleSheet.create({
-  friendRow: {
+  friendContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    justifyContent: 'space-between',
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingHorizontal: 6,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+  friendInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     marginRight: 12,
   },
   friendName: {
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: 16,
+    marginBottom: 2,
   },
   friendUsername: {
     color: '#888',
-    fontSize: 12,
+    fontSize: 14,
   },
   removeButton: {
+    borderWidth: 1,
+    borderColor: '#aaa',
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#E63946',
-    borderRadius: 6,
+    paddingVertical: 5,
   },
   removeText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 13,
+    color: '#555',
+    fontWeight: '500',
+    fontSize: 14,
   },
 });
