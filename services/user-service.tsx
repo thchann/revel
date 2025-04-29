@@ -1,5 +1,5 @@
 const AUTH0_DOMAIN = 'dev-sb38zfhoymytmq0h.us.auth0.com';
-const BACKEND_URL = 'https://dcef-131-194-168-66.ngrok-free.app'; // add /users because your router is /users
+const BACKEND_URL = 'https://dcef-131-194-168-66.ngrok-free.app/users'; // add /users because your router is /users
 
 // Fetch user profile from Auth0's /userinfo endpoint
 export const getUserInfo = async (accessToken: string) => {
@@ -13,17 +13,23 @@ export const getUserInfo = async (accessToken: string) => {
 
 // Save (create) a user to backend
 export const saveUserToBackend = async (userProfile: any) => {
-  const response = await fetch(`${BACKEND_URL}/users/add_user`, {
+  const userPayload = {
+    email: userProfile.email,
+    name: userProfile.nickname || userProfile.name,
+    image: userProfile.picture || "", 
+    friends: [],
+    clubs: [],
+  };
+
+  console.log('[saveUserToBackend] Sending:', userPayload);
+
+  const response = await fetch(`${BACKEND_URL}/add_user`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      email: userProfile.email,
-      name: userProfile.nickname || userProfile.name,
-      image: "",
-      friends: [],
-      clubs: [],
-    }),
+    body: JSON.stringify(userPayload),
   });
+
+  console.log('[saveUserToBackend] Sending:', userPayload);
 
   if (!response.ok) {
     const errorData = await response.json();
