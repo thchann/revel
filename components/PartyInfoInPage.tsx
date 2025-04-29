@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, Image, ImageComponent } from 'react-native';
-import { FontAwesome, Entypo } from '@expo/vector-icons';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { Entypo } from '@expo/vector-icons';
 import { RootStackParamList } from '../types/navigation';
 
 type PartyInfoProps = RootStackParamList['PartyPage'];
@@ -12,126 +12,68 @@ export default function PartyInfoInPage({
     location,
     description,
     image,
-} : PartyInfoProps) {
+}: PartyInfoProps) {
   return (
     <View style={styles.content}>
-        <View style={styles.headerContainer}>
-            <View style={styles.headerInfo}>
-                <Text style={styles.title}>{title}</Text>
-                <Text style={styles.org}>{org}</Text>
-            </View>
-            <View style={styles.ratings}>
-                <Text style={styles.label}>Safety:</Text>
-                    <FontAwesome name="star-o" size={16} />
-                    <FontAwesome name="star-o" size={16} />
-                    <FontAwesome name="star-o" size={16} />
-                    <FontAwesome name="star-o" size={16} />
-                    <FontAwesome name="star-o" size={16} />
-                <Text style={styles.label}>  Overall:</Text>
-                    <FontAwesome name="star-o" size={16} />
-                    <FontAwesome name="star-o" size={16} />
-                    <FontAwesome name="star-o" size={16} />
-                    <FontAwesome name="star-o" size={16} />
-                    <FontAwesome name="star-o" size={16} />
-            </View>
-        </View>
-        <View style={styles.mainContentContainer}>
-            <View style={styles.imageContainer}>
-                <Image source={image} style={styles.image} /> 
-            </View>
-            <View style={styles.meta}>
-                <View style={styles.metaTag}>
-                    <Entypo name="calendar" size={14} />
-                    <Text style={styles.metaText}>  {date}</Text>
-                </View>
-                <View style={styles.metaTag}> 
-                    <Entypo name="location-pin" size={14} />
-                    <Text style={styles.metaText}>  {location}</Text>
-                </View>
-                <Text style={styles.description}>
-                    <Text style={styles.descriptionTitle}>Description: </Text>
-                    {description}
-                </Text>
+      <Text style={styles.title}>{title}</Text>
 
-            </View>
-        </View>
+      <View style={styles.meta}>
+        <Entypo name="calendar" size={14} />
+        <Text style={styles.metaText}>  {date}</Text>
+        <Entypo name="location-pin" size={14} style={{ marginLeft: 10 }} />
+        <Text style={styles.metaText}>  {location}</Text>
       </View>
+
+      <View style={styles.imageContainer}>
+        <Image source={image} style={styles.image} />
+      </View>
+
+      <Text style={styles.descriptionTitle}>Description:</Text>
+      <Text style={styles.description}>{description}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    padding: 12,
-  },
-  headerContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    marginBottom: 5,
-  },
-  headerInfo: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    paddingHorizontal: 10,
+    paddingTop: 0, // <<< REMOVE top padding
+    paddingBottom: 10,
+    backgroundColor: '#fff',
   },
   title: {
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: 'bold',
-  },
-  org: {
-    backgroundColor: '#eee',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    marginVertical: 4,
-    fontSize: 12,
-  },
-  ratings: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-    flexWrap: 'wrap',
-  },
-  label: {
-    fontSize: 12,
-    marginRight: 5,
-  },
-  mainContentContainer: {
-    display: 'flex',
-    flexDirection: 'row',
-  },
-  imageContainer: {
-    width: 120,
-    height: 120,
-    marginRight: 10,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 10,
-    resizeMode: 'cover',
+    marginBottom: 8,
   },
   meta: {
-    flexDirection: 'column',
-  },
-  metaTag: {
-    display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
+    flexWrap: 'wrap',
   },
   metaText: {
     fontSize: 14,
   },
+  imageContainer: {
+    width: '100%',
+    height: 180,
+    marginBottom: 12,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
   descriptionTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
-    fontSize: 14,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   description: {
     fontSize: 14,
-    flexWrap: 'wrap',
-    width: '50%',
+    color: '#333',
   },
 });

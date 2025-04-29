@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import RootStackNavigator from './navigators/RootStackNavigator';
 import Providers from './providers/provider';
 import 'react-native-get-random-values';
+import Toast from 'react-native-toast-message';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -26,6 +27,7 @@ export default function App() {
           <RootStackNavigator />
         </NavigationContainer>
       </Providers>
+      <Toast />
     </GestureHandlerRootView>
     
   );
