@@ -1,5 +1,5 @@
 // app/index.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   FlatList,
   ListRenderItem,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native'; // <-- ADD THIS
 import EventCard from '../components/EventCard';
 import FilterBar from '../components/FilterBar';
 import { Event } from '../types/components';
@@ -15,18 +16,20 @@ import { fetchAllEvents } from '../services/party-service';
 export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([]);
 
-  useEffect(() => {
-    const loadEvents = async () => {
-      try {
-        const fetchedEvents = await fetchAllEvents();
-        setEvents(fetchedEvents);
-      } catch (error) {
-        console.error('[HomePage] Failed to fetch events:', error);
-      }
-    };
+  useFocusEffect(
+    useCallback(() => {
+      const loadEvents = async () => {
+        try {
+          const fetchedEvents = await fetchAllEvents();
+          setEvents(fetchedEvents);
+        } catch (error) {
+          console.error('[HomePage] Failed to fetch events:', error);
+        }
+      };
 
-    loadEvents();
-  }, []);
+      loadEvents();
+    }, [])
+  );
 
   const renderItem: ListRenderItem<Event> = ({ item }) => <EventCard {...item} />;
 
