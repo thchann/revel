@@ -16,7 +16,7 @@ export const saveUserToBackend = async (userProfile: any) => {
   const userPayload = {
     email: userProfile.email,
     name: userProfile.nickname || userProfile.name,
-    image: userProfile.picture || "", 
+    image: userProfile.picture || "",
     friends: [],
     clubs: [],
   };
@@ -29,17 +29,16 @@ export const saveUserToBackend = async (userProfile: any) => {
     body: JSON.stringify(userPayload),
   });
 
-  console.log('[saveUserToBackend] Sending:', userPayload);
-
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.detail || 'Failed to save user');
   }
 
   const data = await response.json();
-  console.log('data: ',data)
-  return await response.json(); // should contain { id, email, name, friends, clubs }
+  console.log('data:', data);
+  return data;
 };
+
 
 // Fetch a user by **email** (for login flow)
 export const fetchUserByEmail = async (email: string) => {
