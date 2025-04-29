@@ -4,6 +4,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useAuthRequest, makeRedirectUri, ResponseType } from 'expo-auth-session';
 import { AUTH0_DOMAIN, AUTH0_CLIENT_ID } from '@env';
 import { getUserInfo, saveUserToBackend, fetchUserByEmail } from '../services/user-service';
+import { Alert } from 'react-native';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -29,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [authLoading, setAuthLoading] = useState(true);
   const [authFlowStarted, setAuthFlowStarted] = useState(false);
   const [userInitialized, setUserInitialized] = useState(false);
+  const [forceSignup, setForceSignup] = useState(false);
 
   const redirectUri = makeRedirectUri({ native: 'exp://fbfpraq-tchan-8081.exp.direct' });
 
@@ -67,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logoutWithAuth0 = async () => {
     await SecureStore.deleteItemAsync('authToken');
     await SecureStore.deleteItemAsync('activeUserId');
-    await SecureStore.deleteItemAsync('userEmail'); // Also clear userEmail
+    await SecureStore.deleteItemAsync('userEmail');
     setToken(null);
   };
 
@@ -98,15 +100,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const profile = await getUserInfo(accessToken);
 
-          // Save email immediately after getting profile
           await SecureStore.setItemAsync('userEmail', profile.email);
 
           let userProfileFromBackend;
 
-          if (res === signupResponse) {
+          if (forceSignup || res === signupResponse) {
             console.log('[Auth] Detected signup flow');
-            userProfileFromBackend = await saveUserToBackend(profile);
-            console.log('[SaveUser] Done:', userProfileFromBackend);
+            setForceSignup(false);
+            try {
+              userProfileFromBackend = await saveUserToBackend(profile);
+            } catch (error) {
+              console.error('[Auth] User already exists:', error);
+              Alert.alert(
+                'Account Already Exists',
+                'An account with this email already exists. Please log in instead.',
+                [
+                  {
+                    text: 'Login',
+                    onPress: () => {
+                      loginWithAuth0();
+                    },
+                  },
+                ],
+                { cancelable: false }
+              );
+              return; // <<< THIS IS THE KEY LINE
+            }
 
             const userId = userProfileFromBackend.id;
             await SecureStore.setItemAsync('activeUserId', userId);
@@ -122,7 +141,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           } else if (res === loginResponse) {
             console.log('[Auth] Detected login flow');
-            userProfileFromBackend = await fetchUserByEmail(profile.email);
+            try {
+              userProfileFromBackend = await fetchUserByEmail(profile.email);
+            } catch (error) {
+              console.error('[Auth] No user found during login:', error);
+              Alert.alert(
+                'Account Not Found',
+                'No account was found with this email. Would you like to sign up or try again?',
+                [
+                  {
+                    text: 'Sign Up',
+                    onPress: () => {
+                      setForceSignup(true);
+                      signupWithAuth0();
+                    },
+                  },
+                  {
+                    text: 'Try Again',
+                    onPress: async () => {
+                      await logoutWithAuth0();
+                    },
+                    style: 'cancel',
+                  },
+                ],
+                { cancelable: false }
+              );
+              return;
+            }
           }
 
           if (!userProfileFromBackend) {
@@ -152,7 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('[Auth] Auth popup dismissed');
         await SecureStore.deleteItemAsync('authToken');
         await SecureStore.deleteItemAsync('activeUserId');
-        await SecureStore.deleteItemAsync('userEmail'); // Also clear userEmail
+        await SecureStore.deleteItemAsync('userEmail');
         setToken(null);
       }
       setAuthLoading(false);
