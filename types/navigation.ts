@@ -8,11 +8,13 @@ export type RootStackParamList = {
     Tabs: undefined;
     Manage: undefined;
     PartyPage: {
+      id: string;
       title: string;
       org: string;
       date: string;
       location: string;
       description: string;
       image: any;
+      imageUrl?: string;
     };
   };
