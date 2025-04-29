@@ -40,6 +40,7 @@ export default function AddLocationScreen() {
         `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${coords.latitude},${coords.longitude}&radius=3000&type=point_of_interest&key=${GOOGLE_KEY}`
       );
       const data = await response.json();
+      //console.log('Fetched places:', data.results);
       setPlaces(data.results);
     } catch (error) {
       console.error('Error fetching nearby places:', error);
