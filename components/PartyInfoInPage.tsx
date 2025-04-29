@@ -25,8 +25,13 @@ export default function PartyInfoInPage({
       </View>
 
       <View style={styles.imageContainer}>
-        <Image source={image} style={styles.image} />
+        {typeof image === 'string' && image.length > 0 ? (
+          <Image source={{ uri: image }} style={styles.image} />
+        ) : (
+          image && <Image source={image} style={styles.image} />
+        )}
       </View>
+
 
       <Text style={styles.descriptionTitle}>Description:</Text>
       <Text style={styles.description}>{description}</Text>

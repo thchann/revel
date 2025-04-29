@@ -29,6 +29,7 @@ export type Friend = {
   avatar: ImageSourcePropType;
   type?: 'status' | 'invite';
   status: 'going' | 'pending' | 'unavailable';
+  isFriend?: boolean; // for invite type
 };
 
 export type Party = {
