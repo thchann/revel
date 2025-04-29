@@ -41,12 +41,26 @@ export default function PartyPage({ route }: Props) {
         });
         return;
       }
+  
+      // NEW: Check if already attending
+      const alreadyAttending = attendees.some((attendee) => attendee.id === userId);
+      if (alreadyAttending) {
+        Toast.show({
+          type: 'info',
+          text1: 'Already attending!',
+        });
+        return;
+      }
+  
+      // If not attending yet, RSVP
       await attendEvent(id, userId);
+  
       Toast.show({
         type: 'success',
         text1: `Attending ${title}`,
         text2: `On ${date}`,
       });
+  
       navigation.goBack();
     } catch (error) {
       console.error('[PartyPage] RSVP failed:', error);
@@ -57,6 +71,7 @@ export default function PartyPage({ route }: Props) {
       });
     }
   };
+  
   
   const handleReject = async () => {
     try {
@@ -139,11 +154,12 @@ export default function PartyPage({ route }: Props) {
               data={attendees}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => <FriendCard {...item} type="status" />}
-              scrollEnabled={true}
+              scrollEnabled={false}
               showsVerticalScrollIndicator={false}
               style={styles.attendeesList}
               removeClippedSubviews={false}
               nestedScrollEnabled={true}
+              
 
             />
           )}
