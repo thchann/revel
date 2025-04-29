@@ -32,53 +32,53 @@ export default function AccountPage() {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null); // You need to know your own ID
 
+  const loadUserProfile = async () => {
+    try {
+      console.log('[AccountPage] Attempting to load profile...');
+      const userEmail = await SecureStore.getItemAsync('userEmail');
+      console.log('[AccountPage] userEmail:', userEmail);
+  
+      if (!userEmail) {
+        console.error('[AccountPage] No user email found');
+        return;
+      }
+  
+      const userData = await fetchUserByEmail(userEmail);
+      setUserId(userData.id);
+      setFullName(userData.name);
+      setTempName(userData.name);
+      setUsername(userData.email.split('@')[0]);
+      setProfileImageUrl(userData.image || null);
+  
+      const friendDetails = await Promise.all(
+        (userData.friends || []).map(async (friendId: string) => {
+          try {
+            const friend = await fetchUserById(friendId);
+            return {
+              id: friend.id,
+              name: friend.name,
+              username: friend.email.split('@')[0],
+              avatar: friend.image || null,
+            };
+          } catch (err) {
+            console.warn(`Could not fetch friend with id ${friendId}`);
+            return null;
+          }
+        })
+      );
+  
+      setFriends(friendDetails.filter(f => f));
+    } catch (error) {
+      console.error('[AccountPage] Failed to load user profile:', error);
+    }
+  };
 
   useEffect(() => {
-    const loadUserProfile = async () => {
-      try {
-        console.log('[AccountPage] Attempting to load profile...');
-        const userEmail = await SecureStore.getItemAsync('userEmail');
-        console.log('[AccountPage] userEmail:', userEmail);
+    if (activeTab === 'friends' || activeTab === 'parties') {
+      loadUserProfile();
+    }
+  }, [activeTab]);
 
-        if (!userEmail) {
-          console.error('[AccountPage] No user email found');
-          return;
-        }
-
-        const userData = await fetchUserByEmail(userEmail);
-        setUserId(userData.id);
-        setFullName(userData.name);
-        setTempName(userData.name);
-        setUsername(userData.email.split('@')[0]);
-        setProfileImageUrl(userData.image || null);
-        setFriends(userData.friends || []);
-
-        const friendDetails = await Promise.all(
-          (userData.friends || []).map(async (friendId: string) => {
-            try {
-              const friend = await fetchUserById(friendId);
-              return {
-                id: friend.id,
-                name: friend.name,
-                username: friend.email.split('@')[0], // assuming no username field
-                avatar: friend.image || null,
-              };
-            } catch (err) {
-              console.warn(`Could not fetch friend with id ${friendId}`);
-              return null;
-            }
-          })
-        );
-
-        setFriends(friendDetails.filter(f => f));
-
-      } catch (error) {
-        console.error('[AccountPage] Failed to load user profile:', error);
-      }
-    };
-
-    loadUserProfile();
-  }, []);
 
   const handleEdit = () => {
     if (isEditing) setFullName(tempName);
