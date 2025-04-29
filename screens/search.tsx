@@ -7,6 +7,9 @@ import SearchBar from '../app/search_components/SearchBar';
 import { fetchAllEvents, fetchAllUsers } from '../services/search-service';
 import fuzzysort from 'fuzzysort';
 import * as SecureStore from 'expo-secure-store';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
+
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,33 +19,34 @@ export default function SearchPage() {
   const [users, setUsers] = useState<Friend[]>([]);
   const [isSearchActive, setIsSearchActive] = useState(false);
 
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        const fetchedEvents = await fetchAllEvents();
-        const fetchedUsers = await fetchAllUsers();
+  useFocusEffect(
+    useCallback(() => {
+      const loadData = async () => {
+        try {
+          const fetchedEvents = await fetchAllEvents();
+          const fetchedUsers = await fetchAllUsers();
   
-        const activeUserId = await SecureStore.getItemAsync('activeUserId');
-
-        const activeUser = fetchedUsers.find((user: Friend) => user.id === activeUserId);
-        const activeUserFriends = activeUser?.friends || [];
-
-        const filteredUsers = fetchedUsers
-          .filter((user: Friend) => user.id !== activeUserId)
-          .map((user: Friend) => ({
-            ...user,
-            isFriend: activeUserFriends.includes(user.id),
-          }));
+          const activeUserId = await SecureStore.getItemAsync('activeUserId');
+          const activeUser = fetchedUsers.find((user: Friend) => user.id === activeUserId);
+          const activeUserFriends = activeUser?.friends || [];
   
-        setEvents(fetchedEvents);
-        setUsers(filteredUsers);
-      } catch (error) {
-        console.error('[SearchPage] Failed to fetch initial data:', error);
-      }
-    };
+          const filteredUsers = fetchedUsers
+            .filter((user: Friend) => user.id !== activeUserId)
+            .map((user: Friend) => ({
+              ...user,
+              isFriend: activeUserFriends.includes(user.id),
+            }));
   
-    loadInitialData();
-  }, []);
+          setEvents(fetchedEvents);
+          setUsers(filteredUsers);
+        } catch (error) {
+          console.error('[SearchPage] Failed to fetch initial data:', error);
+        }
+      };
+  
+      loadData();
+    }, [])
+  );
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
