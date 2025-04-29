@@ -1,5 +1,5 @@
 const AUTH0_DOMAIN = 'dev-sb38zfhoymytmq0h.us.auth0.com';
-const BACKEND_URL = 'https://dcef-131-194-168-66.ngrok-free.app/users'; // add /users because your router is /users
+const BACKEND_URL = 'https://782d-131-194-168-66.ngrok-free.app'; // add /users because your router is /users
 
 // Fetch user profile from Auth0's /userinfo endpoint
 export const getUserInfo = async (accessToken: string) => {
@@ -23,7 +23,7 @@ export const saveUserToBackend = async (userProfile: any) => {
 
   console.log('[saveUserToBackend] Sending:', userPayload);
 
-  const response = await fetch(`${BACKEND_URL}/add_user`, {
+  const response = await fetch(`${BACKEND_URL}/users/add_user`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userPayload),
@@ -42,7 +42,7 @@ export const saveUserToBackend = async (userProfile: any) => {
 
 // Fetch a user by **email** (for login flow)
 export const fetchUserByEmail = async (email: string) => {
-  const url = `${BACKEND_URL}/by_email/${encodeURIComponent(email)}`;
+  const url = `${BACKEND_URL}/users/by_email/${encodeURIComponent(email)}`;
   console.log('[fetchUserByEmail] Fetching:', url);
   const response = await fetch(url);
   if (!response.ok) {
