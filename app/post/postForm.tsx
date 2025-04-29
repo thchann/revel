@@ -22,6 +22,8 @@ import { Modalize } from 'react-native-modalize';
 import AddLocationScreen from './addLocation';
 import { createEvent } from '../../services/party-service';
 import * as SecureStore from 'expo-secure-store';
+import Toast from 'react-native-toast-message';
+
 
 
 type FormScreenRouteProp = RouteProp<PostStackParamList, 'PostForm'>;
@@ -77,7 +79,11 @@ export default function PostFormScreen() {
     try {
       const userId = await SecureStore.getItemAsync('activeUserId');
       if (!userId) {
-        Alert.alert("Error", "User not logged in");
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'User not logged in',
+        });
         return;
       }
   
@@ -89,19 +95,29 @@ export default function PostFormScreen() {
         organization: selectedAffiliation !== 'Personal' ? selectedAffiliation : undefined,
         description,
         host: userId,
-        attendees: [userId], // host is an attendee
+        attendees: [userId],
       };
   
       const created = await createEvent(eventData);
       console.log('[onPost] Event successfully created:', created);
   
-      Alert.alert("Success", "Your party was posted!");
-      navigation.goBack(); // or go to a confirmation screen
+      Toast.show({
+        type: 'success',
+        text1: 'Party Posted!',
+        text2: 'Your event was created successfully.',
+      });
+  
+      navigation.goBack();
     } catch (err) {
       console.error("[onPost] Error creating event:", err);
-      Alert.alert("Error", "Failed to post your party.");
+      Toast.show({
+        type: 'error',
+        text1: 'Post Failed',
+        text2: 'Something went wrong. Please try again.',
+      });
     }
   };
+  
 
   useLayoutEffect(() => {
     navigation.setOptions({
