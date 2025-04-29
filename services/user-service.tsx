@@ -94,15 +94,21 @@ export const updateUserFriends = async (userId: string, friends: string[]) => {
 
 // Add a friend to a user
 export const addFriend = async (userId: string, friendId: string) => {
-  const response = await fetch(`${BACKEND_URL}/${userId}/friends`, {
+  const response = await fetch(`${BACKEND_URL}/users/${userId}/friends`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(friendId),
+    body: JSON.stringify(friendId), // <-- RAW string only
   });
 
-  if (!response.ok) throw new Error('Failed to add friend');
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('[addFriend] Failed:', response.status, error);
+    throw new Error('Failed to add friend');
+  }
+
   return await response.json();
 };
+
 
 // Update a user's events
 export const updateUserEvents = async (userId: string, events: string[]) => {
