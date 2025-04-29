@@ -1,3 +1,5 @@
+const BACKEND_URL = 'https://488b-131-194-168-66.ngrok-free.app'
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -30,24 +32,34 @@ export default function AccountPage() {
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
+        console.log('[AccountPage] Attempting to load profile...');
+        
+        console.log('[AccountPage] Attempting to load profile...');
         const userId = await SecureStore.getItemAsync('activeUserId');
+        console.log('[AccountPage] activeUserId:', userId);
+  
         if (!userId) {
           console.error('[AccountPage] No active user id found');
           return;
         }
-
+  
         const userData = await fetchUserById(userId);
-
+        console.log('[AccountPage] Fetched userData from backend:', userData);
+  
         setFullName(userData.name);
         setTempName(userData.name);
-        setUsername(userData.name);
+        setUsername(userData.email.split('@')[0]);   // <--- make sure you have `setUsername` imported from context
+        
+        console.log('[AccountPage] Username after set:', userData.email.split('@')[0]);
+  
         setFriends(userData.friends || []);
-
+        console.log('[AccountPage] Friends loaded:', userData.friends || []);
+  
       } catch (error) {
         console.error('[AccountPage] Failed to load user profile:', error);
       }
     };
-
+  
     loadUserProfile();
   }, []);
 

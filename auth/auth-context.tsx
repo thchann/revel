@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import { useAuthRequest, makeRedirectUri, ResponseType } from 'expo-auth-session';
 import { AUTH0_DOMAIN, AUTH0_CLIENT_ID } from '@env';
-import { getUserInfo, saveUserToBackend } from '../services/user-service';
+import { getUserInfo, saveUserToBackend, fetchUserByEmail } from '../services/user-service';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -16,6 +16,7 @@ const discovery = {
 interface AuthContextType {
   token: string | null;
   authLoading: boolean;
+  userInitialized: boolean; // ✅ new
   loginWithAuth0: () => void;
   signupWithAuth0: () => void;
   logoutWithAuth0: () => void;
@@ -27,9 +28,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authFlowStarted, setAuthFlowStarted] = useState(false);
+  const [userInitialized, setUserInitialized] = useState(false);
 
   const redirectUri = makeRedirectUri({ native: 'exp://fbfpraq-tchan-8081.exp.direct' });
-  const logoutReturnUri = 'yourapp://login';
 
   const [loginRequest, loginResponse, promptLogin] = useAuthRequest(
     {
@@ -64,21 +65,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logoutWithAuth0 = async () => {
-    console.log('[Auth] Logging out');
     await SecureStore.deleteItemAsync('authToken');
     await SecureStore.deleteItemAsync('activeUserId');
     setToken(null);
-    console.log('[Auth] Token cleared');
   };
 
   const loadToken = async () => {
-    console.log('[Auth] Checking for stored token...');
     const stored = await SecureStore.getItemAsync('authToken');
     if (stored) {
       setToken(stored);
-      console.log('[Auth] Token restored:', stored);
     } else {
-      console.log('[Auth] No token found.');
     }
     setAuthLoading(false);
   };
@@ -98,28 +94,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const accessToken = res.params.access_token;
         await SecureStore.setItemAsync('authToken', accessToken);
         setToken(accessToken);
-        console.log('[Auth] Access token received:', accessToken);
 
         try {
           const profile = await getUserInfo(accessToken);
-          console.log('[Auth] Got user info from Auth0:', profile);
 
-          // Save the user to your backend
-          await saveUserToBackend(profile);
+          let userProfileFromBackend;
 
-          // 🆕 Save user locally for UserContext
-          await SecureStore.setItemAsync(`userProfile-${profile.sub}`, JSON.stringify({
+          if (res === signupResponse) {
+            console.log('[Auth] Detected signup flow');
+            userProfileFromBackend = await saveUserToBackend(profile);
+            console.log('[SaveUser] Done:', userProfileFromBackend);
+          
+            const userId = userProfileFromBackend.id;
+          
+            await SecureStore.setItemAsync('activeUserId', userId);
+            await SecureStore.setItemAsync(`userProfile-${userId}`, JSON.stringify({
+              username: profile.nickname,
+              fullName: profile.name,
+              image: profile.picture,
+            }));
+
+            setUserInitialized(true);  // ✅ Set the flag
+          
+            console.log('[Auth] New user stored locally:', userId);
+
+          } else if (res == loginResponse) {
+            // 🆕 Login flow ➔ fetch existing user
+            userProfileFromBackend = await fetchUserByEmail(profile.email);
+          }
+
+          if (!userProfileFromBackend) {
+            throw new Error('Failed to retrieve user from backend.');
+          }
+
+          await SecureStore.setItemAsync('activeUserId', userProfileFromBackend.id);
+
+          const userProfileData = {
             username: profile.nickname,
             fullName: profile.name,
-          }));
+            image: profile.picture,  // optional: include image for completeness
+          };
+          
+          console.log('[Auth] Storing user profile locally:', userProfileData);
+          
+          await SecureStore.setItemAsync(`userProfile-${userProfileFromBackend.id}`, JSON.stringify(userProfileData));
 
-          // 🆕 Save active user ID (needed for later)
-          await SecureStore.setItemAsync('activeUserId', profile.sub);
+          const storedProfileRaw = await SecureStore.getItemAsync(`userProfile-${userProfileFromBackend.id}`);
+          const storedProfile = storedProfileRaw ? JSON.parse(storedProfileRaw) : null;
+          console.log('[Auth] Retrieved stored user profile:', storedProfile);
+
+          console.log('[Auth] Storing user profile locally:', userProfileData);
 
           console.log('[Auth] User profile saved locally');
 
         } catch (error) {
-
+          console.error('[Auth] Failed during auth response handling:', error);
         }
       } else if (res.type === 'dismiss') {
         console.log('[Auth] Auth popup dismissed');
@@ -134,7 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [loginResponse, signupResponse]);
 
   return (
-    <AuthContext.Provider value={{ token, authLoading, loginWithAuth0, signupWithAuth0, logoutWithAuth0 }}>
+    <AuthContext.Provider value={{ token, authLoading, userInitialized, loginWithAuth0, signupWithAuth0, logoutWithAuth0 }}>
       {children}
     </AuthContext.Provider>
   );

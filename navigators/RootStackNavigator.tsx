@@ -9,13 +9,14 @@ import { RootStackParamList } from '../types/navigation';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootStackNavigator() {
-  const { token, authLoading } = useAuth();
+  const { token, authLoading, userInitialized } = useAuth();
   const isAuthenticated = !!token;
 
   console.log('🧭 [RootNav] token:', token);
   console.log('🕓 [RootNav] authLoading:', authLoading);
+  console.log('✅ [RootNav] userInitialized:', userInitialized);
 
-  if (authLoading) {
+  if (authLoading || (isAuthenticated && !userInitialized)) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
