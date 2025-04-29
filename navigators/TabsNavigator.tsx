@@ -39,7 +39,9 @@ export default function TabsNavigator() {
      <Tab.Screen
         name="index"
         component={HomeStackNavigator}
-        options={{
+        options={{ 
+          title: '', // 👈 this hides just the text/title
+          headerShown: true, // 👈 keep the header visible
           tabBarIcon: ({ color, size }) => (
             <Entypo name="home" size={size} color={color} />
           ),

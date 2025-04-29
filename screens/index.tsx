@@ -33,7 +33,6 @@ export default function HomePage() {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Welcome to Revel!</Text>
-      <FilterBar />
       <FlatList
         data={events}
         keyExtractor={(item) => item.id}
