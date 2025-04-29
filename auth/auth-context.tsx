@@ -16,7 +16,7 @@ const discovery = {
 interface AuthContextType {
   token: string | null;
   authLoading: boolean;
-  userInitialized: boolean; // ✅ new
+  userInitialized: boolean;
   loginWithAuth0: () => void;
   signupWithAuth0: () => void;
   logoutWithAuth0: () => void;
@@ -67,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logoutWithAuth0 = async () => {
     await SecureStore.deleteItemAsync('authToken');
     await SecureStore.deleteItemAsync('activeUserId');
+    await SecureStore.deleteItemAsync('userEmail'); // Also clear userEmail
     setToken(null);
   };
 
@@ -74,7 +75,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const stored = await SecureStore.getItemAsync('authToken');
     if (stored) {
       setToken(stored);
-    } else {
     }
     setAuthLoading(false);
   };
@@ -98,28 +98,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const profile = await getUserInfo(accessToken);
 
+          // Save email immediately after getting profile
+          await SecureStore.setItemAsync('userEmail', profile.email);
+
           let userProfileFromBackend;
 
           if (res === signupResponse) {
             console.log('[Auth] Detected signup flow');
             userProfileFromBackend = await saveUserToBackend(profile);
             console.log('[SaveUser] Done:', userProfileFromBackend);
-          
+
             const userId = userProfileFromBackend.id;
-          
             await SecureStore.setItemAsync('activeUserId', userId);
+
             await SecureStore.setItemAsync(`userProfile-${userId}`, JSON.stringify({
               username: profile.nickname,
               fullName: profile.name,
               image: profile.picture,
             }));
 
-            setUserInitialized(true);  // ✅ Set the flag
-          
+            setUserInitialized(true);
             console.log('[Auth] New user stored locally:', userId);
 
-          } else if (res == loginResponse) {
-            // 🆕 Login flow ➔ fetch existing user
+          } else if (res === loginResponse) {
+            console.log('[Auth] Detected login flow');
             userProfileFromBackend = await fetchUserByEmail(profile.email);
           }
 
@@ -132,20 +134,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const userProfileData = {
             username: profile.nickname,
             fullName: profile.name,
-            image: profile.picture,  // optional: include image for completeness
+            image: profile.picture,
           };
-          
+
           console.log('[Auth] Storing user profile locally:', userProfileData);
-          
+
           await SecureStore.setItemAsync(`userProfile-${userProfileFromBackend.id}`, JSON.stringify(userProfileData));
 
           const storedProfileRaw = await SecureStore.getItemAsync(`userProfile-${userProfileFromBackend.id}`);
           const storedProfile = storedProfileRaw ? JSON.parse(storedProfileRaw) : null;
           console.log('[Auth] Retrieved stored user profile:', storedProfile);
-
-          console.log('[Auth] Storing user profile locally:', userProfileData);
-
-          console.log('[Auth] User profile saved locally');
 
         } catch (error) {
           console.error('[Auth] Failed during auth response handling:', error);
@@ -154,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('[Auth] Auth popup dismissed');
         await SecureStore.deleteItemAsync('authToken');
         await SecureStore.deleteItemAsync('activeUserId');
+        await SecureStore.deleteItemAsync('userEmail'); // Also clear userEmail
         setToken(null);
       }
       setAuthLoading(false);

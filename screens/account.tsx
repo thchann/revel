@@ -1,5 +1,3 @@
-const BACKEND_URL = 'https://488b-131-194-168-66.ngrok-free.app'
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -18,7 +16,7 @@ import { useAuth } from '../auth/auth-context';
 import FriendsModal from '../components/modals/friendsModal';
 import PartiesModal from '../components/modals/partiesModal';
 import ClubsModal from '../components/modals/clubsModal';
-import { fetchUserById } from '../services/user-service';
+import { fetchUserByEmail } from '../services/user-service'; // changed from fetchUserById
 import * as SecureStore from 'expo-secure-store';
 
 export default function AccountPage() {
@@ -28,38 +26,34 @@ export default function AccountPage() {
   const { logoutWithAuth0 } = useAuth();
   const [activeTab, setActiveTab] = useState<'friends' | 'parties' | 'clubs'>('friends');
   const [friends, setFriends] = useState<any[]>([]);
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
         console.log('[AccountPage] Attempting to load profile...');
-        
-        console.log('[AccountPage] Attempting to load profile...');
-        const userId = await SecureStore.getItemAsync('activeUserId');
-        console.log('[AccountPage] activeUserId:', userId);
-  
-        if (!userId) {
-          console.error('[AccountPage] No active user id found');
+        const userEmail = await SecureStore.getItemAsync('userEmail');
+        console.log('[AccountPage] userEmail:', userEmail);
+
+        if (!userEmail) {
+          console.error('[AccountPage] No user email found');
           return;
         }
-  
-        const userData = await fetchUserById(userId);
+
+        const userData = await fetchUserByEmail(userEmail);
         console.log('[AccountPage] Fetched userData from backend:', userData);
-  
+
         setFullName(userData.name);
         setTempName(userData.name);
-        setUsername(userData.email.split('@')[0]);   // <--- make sure you have `setUsername` imported from context
-        
-        console.log('[AccountPage] Username after set:', userData.email.split('@')[0]);
-  
+        setUsername(userData.email.split('@')[0]);
+        setProfileImageUrl(userData.image || null);
         setFriends(userData.friends || []);
-        console.log('[AccountPage] Friends loaded:', userData.friends || []);
-  
+
       } catch (error) {
         console.error('[AccountPage] Failed to load user profile:', error);
       }
     };
-  
+
     loadUserProfile();
   }, []);
 
@@ -83,7 +77,11 @@ export default function AccountPage() {
           </TouchableOpacity>
         </View>
 
-        <Image source={require('../assets/profile.jpg')} style={styles.profileImage} />
+        {profileImageUrl ? (
+          <Image source={{ uri: profileImageUrl }} style={styles.profileImage} />
+        ) : (
+          <Image source={require('../assets/profile.jpg')} style={styles.profileImage} />
+        )}
 
         <View style={styles.nameRow}>
           {isEditing ? (
@@ -158,99 +156,24 @@ export default function AccountPage() {
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 0,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  header: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginTop: 0,   
-    marginBottom: 12,
-  },
-  username: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  manage: {
-    fontSize: 14,
-    color: '#666',
-  },
-  logout: {
-    fontSize: 14,
-    color: '#2E2A80',
-    fontWeight: '600',
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 4,
-    marginTop: 4,
-  },
-  profileImage: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    marginBottom: 12,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  nameInput: {
-    fontSize: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    paddingVertical: 4,
-    minWidth: 160,
-  },
-  tabs: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: '#eee',
-  },
-  tabText: {
-    fontSize: 14,
-    color: '#444',
-  },
-  activeTab: {
-    backgroundColor: '#2E2A80',
-  },
-  activeTabText: {
-    color: '#fff',
-  },
-  friendContainer: {
-    backgroundColor: '#f2f2f2',
-    borderRadius: 12,
-    padding: 16,
-    width: '100%',
-    maxHeight: 380,
-  },
-  friendTitle: {
-    fontWeight: '700',
-    fontSize: 16,
-    marginBottom: 12,
-  },
+  safeArea: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, paddingHorizontal: 24, paddingTop: 0, backgroundColor: '#fff', alignItems: 'center', marginTop: 16 },
+  header: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  username: { fontSize: 20, fontWeight: '700' },
+  manage: { fontSize: 14, color: '#666' },
+  logout: { fontSize: 14, color: '#2E2A80', fontWeight: '600' },
+  logoutButton: { flexDirection: 'row', alignItems: 'center', padding: 4, marginTop: 4 },
+  profileImage: { width: 130, height: 130, borderRadius: 65, marginBottom: 12 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
+  name: { fontSize: 18, fontWeight: '600' },
+  nameInput: { fontSize: 18, borderBottomWidth: 1, borderBottomColor: '#ccc', paddingVertical: 4, minWidth: 160 },
+  tabs: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  tab: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20, backgroundColor: '#eee' },
+  tabText: { fontSize: 14, color: '#444' },
+  activeTab: { backgroundColor: '#2E2A80' },
+  activeTabText: { color: '#fff' },
+  friendContainer: { backgroundColor: '#f2f2f2', borderRadius: 12, padding: 16, width: '100%', maxHeight: 380 },
+  friendTitle: { fontWeight: '700', fontSize: 16, marginBottom: 12 },
 });
