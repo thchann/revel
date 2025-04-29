@@ -135,7 +135,6 @@ export default function AccountPage() {
         <View style={styles.header}>
           <View>
             <Text style={styles.username}>@{username}</Text>
-            <Text style={styles.manage}>Manage</Text>
           </View>
           <TouchableOpacity onPress={logoutWithAuth0} style={styles.logoutButton}>
             <Feather name="log-out" size={16} color="#2E2A80" style={{ marginRight: 4 }} />
