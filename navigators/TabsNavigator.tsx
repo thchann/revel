@@ -72,18 +72,6 @@ export default function TabsNavigator() {
       />
 
       <Tab.Screen
-        name="activity"
-        component={ActivityPage}
-        options={{
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (<NotificationIcon 
-            size={size}
-            color={color}
-          />),
-        }}
-      />
-
-      <Tab.Screen
         name="account"
         component={AccountPage}
         options={{
