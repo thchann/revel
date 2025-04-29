@@ -18,15 +18,18 @@ import PartiesModal from '../components/modals/partiesModal';
 import ClubsModal from '../components/modals/clubsModal';
 import { fetchUserByEmail } from '../services/user-service'; // changed from fetchUserById
 import * as SecureStore from 'expo-secure-store';
+import { updateFriends } from '../services/friend-service';
 
 export default function AccountPage() {
   const { username, fullName, setFullName, setUsername } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [tempName, setTempName] = useState(fullName);
   const { logoutWithAuth0 } = useAuth();
-  const [activeTab, setActiveTab] = useState<'friends' | 'parties' | 'clubs'>('friends');
+  const [activeTab, setActiveTab] = useState<'friends' | 'parties' >('friends');
   const [friends, setFriends] = useState<any[]>([]);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null); // You need to know your own ID
+
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -41,6 +44,7 @@ export default function AccountPage() {
         }
 
         const userData = await fetchUserByEmail(userEmail);
+        setUserId(userData.id);
         console.log('[AccountPage] Fetched userData from backend:', userData);
 
         setFullName(userData.name);
@@ -60,6 +64,28 @@ export default function AccountPage() {
   const handleEdit = () => {
     if (isEditing) setFullName(tempName);
     setIsEditing(!isEditing);
+  };
+
+  const handleRemoveFriend = async (friendIdToRemove: string) => {
+    try {
+      const userId = await SecureStore.getItemAsync('activeUserId');
+      if (!userId) {
+        console.error('[handleRemoveFriend] No userId found');
+        return;
+      }
+  
+      // Filter out the friend locally
+      const updatedFriends = friends.filter((f: any) => f.id !== friendIdToRemove);
+      setFriends(updatedFriends); // Update UI
+  
+      // Send only the friend IDs to backend
+      const friendIdsToSend = updatedFriends.map((f: any) => f.id);
+      await updateFriends(userId, friendIdsToSend);
+  
+      console.log('✅ Friend removed locally and in backend');
+    } catch (error) {
+      console.error('❌ Failed to remove friend:', error);
+    }
   };
 
   return (
@@ -118,14 +144,6 @@ export default function AccountPage() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'clubs' && styles.activeTab]}
-            onPress={() => setActiveTab('clubs')}
-          >
-            <Text style={[styles.tabText, activeTab === 'clubs' && styles.activeTabText]}>
-              Clubs
-            </Text>
-          </TouchableOpacity>
         </View>
 
         <View style={{ width: '100%' }}>
@@ -134,23 +152,20 @@ export default function AccountPage() {
               <Text style={styles.friendTitle}>Friends ({friends.length})</Text>
               <FlatList
                 data={friends}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ paddingBottom: 80 }}
-                showsVerticalScrollIndicator={false}
+                keyExtractor={(item) => typeof item === 'string' ? item : item.id}
                 renderItem={({ item }) => (
                   <FriendsModal
-                    id={item.id}
-                    name={item.name}
-                    username={item.username}
+                    id={typeof item === 'string' ? item : item.id}
+                    name={typeof item === 'string' ? '' : item.name}
+                    username={typeof item === 'string' ? '' : item.username}
                     avatar={require('../assets/profile.jpg')}
-                    onRemove={(id) => setFriends((prev) => prev.filter((f) => f.id !== id))}
+                    onRemove={handleRemoveFriend}
                   />
                 )}
               />
             </View>
           )}
           {activeTab === 'parties' && <PartiesModal />}
-          {activeTab === 'clubs' && <ClubsModal />}
         </View>
       </View>
     </SafeAreaView>

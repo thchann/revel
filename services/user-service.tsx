@@ -1,5 +1,5 @@
 const AUTH0_DOMAIN = 'dev-sb38zfhoymytmq0h.us.auth0.com';
-const BACKEND_URL = 'https://782d-131-194-168-66.ngrok-free.app'; // add /users because your router is /users
+const BACKEND_URL = 'https://ac13-131-194-168-66.ngrok-free.app'; // add /users because your router is /users
 
 // Fetch user profile from Auth0's /userinfo endpoint
 export const getUserInfo = async (accessToken: string) => {
@@ -94,15 +94,21 @@ export const updateUserFriends = async (userId: string, friends: string[]) => {
 
 // Add a friend to a user
 export const addFriend = async (userId: string, friendId: string) => {
-  const response = await fetch(`${BACKEND_URL}/${userId}/friends`, {
+  const response = await fetch(`${BACKEND_URL}/users/${userId}/friends`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(friendId),
+    body: JSON.stringify(friendId), // <-- RAW string only
   });
 
-  if (!response.ok) throw new Error('Failed to add friend');
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('[addFriend] Failed:', response.status, error);
+    throw new Error('Failed to add friend');
+  }
+
   return await response.json();
 };
+
 
 // Update a user's events
 export const updateUserEvents = async (userId: string, events: string[]) => {

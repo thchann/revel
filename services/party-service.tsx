@@ -1,5 +1,5 @@
 // services/party-service.tsx
-const BACKEND_URL = 'https://782d-131-194-168-66.ngrok-free.app'; // make sure this is your current backend URL
+const BACKEND_URL = 'https://ac13-131-194-168-66.ngrok-free.app'; // make sure this is your current backend URL
 
 // Fetch all events
 export const fetchAllEvents = async () => {

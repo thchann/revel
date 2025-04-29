@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
 interface FriendModalProps {
@@ -10,23 +10,17 @@ interface FriendModalProps {
 }
 
 export default function FriendsModal({ id, name, username, avatar, onRemove }: FriendModalProps) {
-  const [showRemove, setShowRemove] = useState(false);
-
   return (
-    <TouchableOpacity onPress={() => setShowRemove((prev) => !prev)} activeOpacity={0.8}>
-      <View style={styles.friendRow}>
-        <Image source={avatar} style={styles.avatar} />
-        <View style={{ flex: 1 }}>
-          <Text style={styles.friendName}>{name}</Text>
-          <Text style={styles.friendUsername}>{username}</Text>
-        </View>
-        {showRemove && (
-          <TouchableOpacity onPress={() => onRemove(id)}>
-            <Text style={styles.removeText}>Remove</Text>
-          </TouchableOpacity>
-        )}
+    <View style={styles.friendRow}>
+      <Image source={avatar} style={styles.avatar} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.friendName}>{name}</Text>
+        <Text style={styles.friendUsername}>{username}</Text>
       </View>
-    </TouchableOpacity>
+      <TouchableOpacity onPress={() => onRemove(id)} style={styles.removeButton}>
+        <Text style={styles.removeText}>Remove</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -53,8 +47,14 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 12,
   },
+  removeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#E63946',
+    borderRadius: 6,
+  },
   removeText: {
-    color: '#E63946',
+    color: '#fff',
     fontWeight: '600',
     fontSize: 13,
   },
