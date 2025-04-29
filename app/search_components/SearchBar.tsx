@@ -27,7 +27,7 @@ export default function SearchBar({
   onLocation
 }: Props) {
 
-    const filters = ['Parties', 'Clubs', 'Friends'];
+    const filters = ['Parties', 'Friends'];
 
     const { height, width } = Dimensions.get('window');
     
