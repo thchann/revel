@@ -1,18 +1,10 @@
+// types/components.d.ts
 import { ImageSourcePropType } from 'react-native';
 
 export type EventCardProps = {
-    image: any; // you can refine this later (e.g. ImageSourcePropType)
-    title: string;
-    org: string;
-    date: string;
-    location: string;
-    description: string;
-    compact: boolean;
-  };
-
-export type Event = {
   id: string;
-  image: ImageSourcePropType;
+  image?: ImageSourcePropType; // fallback image if no URL
+  imageUrl?: string;            // actual backend image URL
   title: string;
   org: string;
   date: string;
@@ -21,12 +13,14 @@ export type Event = {
   compact: boolean;
 };
 
+export type Event = EventCardProps; // ✅ Event is just an EventCardProps
+
 export type Club = {
   id: string;
   name: string;
   members: string;
   image: ImageSourcePropType;
-}
+};
 
 export type Friend = {
   id: string;
@@ -35,12 +29,11 @@ export type Friend = {
   avatar: ImageSourcePropType;
   type?: 'status' | 'invite';
   status: 'going' | 'pending' | 'unavailable';
-}
+};
 
 export type Party = {
   id: string;
   name: string;
   date: string;
   image: ImageSourcePropType;
-}
-
+};

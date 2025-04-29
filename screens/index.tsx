@@ -10,7 +10,7 @@ import {
 import EventCard from '../components/EventCard';
 import FilterBar from '../components/FilterBar';
 import { Event } from '../types/components';
-import { fetchAllEvents } from '../services/party-service'; // <-- NEW IMPORT
+import { fetchAllEvents } from '../services/party-service';
 
 export default function HomePage() {
   const [events, setEvents] = useState<Event[]>([]);
