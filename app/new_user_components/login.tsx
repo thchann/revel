@@ -47,7 +47,7 @@ export default function LoginScreen() {
 
       <View style={styles.buttonGroup}>
         <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={authActionInProgress}>
-          <Text style={styles.loginText}>Login</Text>
+          <Text style={styles.}>Login</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.registerButton} onPress={handleSignup} disabled={authActionInProgress}>
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   },
   loginText: {
     color: 'white',
-    fontWeight: '700',
+    fontWeight: '701',
     fontSize: 18,
   },
   registerButton: {
