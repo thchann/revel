@@ -1,4 +1,3 @@
-const AUTH0_DOMAIN = 'dev-sb38zfhoymytmq0h.us.auth0.com';
 const BACKEND_URL = 'https://ac13-131-194-168-66.ngrok-free.app'; // add /users because your router is /users
 
 // Fetch user profile from Auth0's /userinfo endpoint
