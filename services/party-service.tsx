@@ -2,7 +2,7 @@ const BACKEND_URL = 'https://ac13-131-194-168-66.ngrok-free.app'; // make sure t
 
 export const createEvent = async (eventData: {
     title: string;
-    date: string; // ISO string
+    date: string; 
     location: string;
     images: string;
     organization?: string;
@@ -20,7 +20,7 @@ export const createEvent = async (eventData: {
       throw new Error('Failed to create event');
     }
   
-    return await response.json(); // contains the event ID and data
+    return await response.json(); 
   };
 
 // Fetch all events
@@ -44,7 +44,6 @@ export const fetchAllEvents = async () => {
   }));
 };
 
-// Fetch attendees (user IDs) for an event
 export const fetchEventAttendees = async (eventId: string) => {
   const response = await fetch(`${BACKEND_URL}/events/${eventId}/attendees`);
   if (!response.ok) {
@@ -53,10 +52,9 @@ export const fetchEventAttendees = async (eventId: string) => {
     throw new Error('Failed to fetch event attendees');
   }
   const attendees = await response.json();
-  return attendees; // this is a list of user IDs
+  return attendees;
 };
 
-// Fetch a user's full profile by ID
 export const fetchUserById = async (userId: string) => {
   const response = await fetch(`${BACKEND_URL}/users/${userId}`);
   if (!response.ok) {
@@ -69,8 +67,8 @@ export const fetchUserById = async (userId: string) => {
     id: user.id,
     name: user.name,
     username: user.email.split('@')[0],
-    avatar: { uri: user.image || 'https://via.placeholder.com/150' }, // fallback image
-    status: 'pending' as 'pending', // you can later adjust status based on attendance
+    avatar: { uri: user.image || 'https://via.placeholder.com/150' },
+    status: 'pending' as 'pending', 
   };
 };
 
@@ -105,11 +103,11 @@ export const rejectEvent = async (eventId: string, userId: string) => {
 export const fetchUserEvents = async (userId: string) => {
     const response = await fetch(`${BACKEND_URL}/users/${userId}/events`);
     if (!response.ok) throw new Error('Failed to fetch user events');
-    return await response.json(); // list of event IDs
+    return await response.json(); 
   };
   
 export const fetchEventById = async (eventId: string) => {
     const response = await fetch(`${BACKEND_URL}/events/${eventId}`);
     if (!response.ok) throw new Error('Failed to fetch event details');
-    return await response.json(); // full event object
+    return await response.json(); 
   };
